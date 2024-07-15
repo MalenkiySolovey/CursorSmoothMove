@@ -1,0 +1,70 @@
+#include <SFML/Graphics.hpp>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+#include <vector>
+
+std::vector<sf::Vector2f> path;
+
+int random(int min, int max) {
+    return min + rand() % (max - min + 1);
+}
+
+void moveMouseSmoothly(int targetX, int targetY) {
+    sf::Vector2i startPos = sf::Mouse::getPosition();
+    int startX = startPos.x;
+    int startY = startPos.y;
+
+    int deltaX = targetX - startX;
+    int deltaY = targetY - startY;
+    double distance = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    double speed = random(5, 15);
+    double steps = distance / speed;
+
+    for (double i = 0; i < steps; i++) {
+        double progress = i / steps;
+        int currentX = startX + static_cast<int>(deltaX * progress) + random(-2, 2);
+        int currentY = startY + static_cast<int>(deltaY * progress) + random(-2, 2);
+
+        sf::Mouse::setPosition(sf::Vector2i(currentX, currentY));
+
+        path.push_back({ static_cast<float>(currentX), static_cast<float>(currentY) });
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(random(0, 10) * 1ms);
+    }
+    sf::Mouse::setPosition(sf::Vector2i(targetX, targetY));
+    path.push_back({ static_cast<float>(targetX), static_cast<float>(targetY) });
+}
+
+int main() {
+    srand(static_cast<unsigned int>(time(0)));
+    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "Mouse Path", sf::Style::Fullscreen);
+    window.setFramerateLimit(60);
+
+    int targetX = 500;
+    int targetY = 500;
+    std::thread(moveMouseSmoothly, targetX, targetY).detach();
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        window.clear(sf::Color::White);
+
+        sf::VertexArray lines(sf::LinesStrip, path.size());
+        for (size_t i = 0; i < path.size(); ++i) {
+            lines[i].position = path[i];
+            lines[i].color = sf::Color::Red;
+        }
+        window.draw(lines);
+
+        window.display();
+    }
+
+    return 0;
+}
