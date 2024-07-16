@@ -4,8 +4,16 @@
 #include <ctime>
 #include <thread>
 #include <vector>
+#include <fstream>
+#include <iostream>
 
 std::vector<sf::Vector2f> path;
+
+void readTxtTarget(int& x, int& y) {
+    std::fstream File("Target.txt");
+    File >> x >> y;
+    File.close();
+}
 
 int random(int min, int max) {
     return min + rand() % (max - min + 1);
@@ -45,9 +53,9 @@ int main() {
     sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "Mouse Path", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
 
-    int targetX = 500;
-    int targetY = 500;
-    std::thread(moveMouseSmoothly, targetX, targetY).detach();
+    int x, y;
+    readTxtTarget(x, y);
+    std::thread(moveMouseSmoothly, x, y).detach();
 
     while (window.isOpen()) {
         sf::Event event;
